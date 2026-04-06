@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2050 — Une vie en Suisse</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold: #c9a84c;
+            --white: #f0ece4;
+            --dark: #0d0d0d;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--dark);
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ══ CANVAS FOND ANIMÉ ══ */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        /* ══ OVERLAY GRADIENT ══ */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 60%),
+                linear-gradient(to bottom, rgba(13,13,13,0.3) 0%, rgba(13,13,13,0.75) 60%, rgba(13,13,13,0.97) 100%);
+            z-index: 1;
+        }
+
+        /* ══ CONTAINER PRINCIPAL ══ */
+        .scene {
+            position: relative;
+            z-index: 2;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* ══ ÉPIGRAPHE ══ */
+        .epigraph {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            color: var(--gold);
+            font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeUp 1.2s ease forwards 0.4s;
+        }
+
+        /* ══ TITRE ══ */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3.5rem, 10vw, 8rem);
+            font-weight: 700;
+            line-height: 0.95;
+            letter-spacing: -2px;
+            margin: 1.2rem 0 0.5rem;
+            opacity: 0;
+            animation: fadeUp 1.2s ease forwards 0.7s;
+        }
+
+        h1 .year {
+            display: block;
+            color: var(--gold);
+        }
+
+        h1 .subtitle-line {
+            display: block;
+            font-size: clamp(1.2rem, 3vw, 2.2rem);
+            font-weight: 400;
+            font-style: italic;
+            color: rgba(240,236,228,0.55);
+            letter-spacing: 1px;
+            margin-top: 0.6rem;
+        }
+
+        /* ══ DESCRIPTION ══ */
+        .description {
+            max-width: 520px;
+            font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+            color: rgba(240,236,228,0.6);
+            font-weight: 300;
+            line-height: 1.8;
+            margin: 1.8rem auto 3rem;
+            opacity: 0;
+            animation: fadeUp 1.2s ease forwards 1s;
+        }
+
+        .description strong {
+            color: var(--white);
+            font-weight: 500;
+        }
+
+        /* ══ BOUTON PRINCIPAL ══ */
+        .cta-wrapper {
+            opacity: 0;
+            animation: fadeUp 1.2s ease forwards 1.3s;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: transparent;
+            border: 1px solid rgba(201,168,76,0.6);
+            color: var(--gold);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 1rem 2.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.4s;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--gold);
+            transform: translateX(-101%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cta:hover::before {
+            transform: translateX(0);
+        }
+
+        .cta:hover {
+            color: var(--dark);
+        }
+
+        .cta span, .cta svg {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s;
+        }
+
+        .cta:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* ══ INDICATEURS BAS DE PAGE ══ */
+        .bottom-bar {
+            position: fixed;
+            bottom: 2rem;
+            left: 0;
+            right: 0;
+            z-index: 3;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 3rem;
+            opacity: 0;
+            animation: fadeIn 1.5s ease forwards 1.8s;
+        }
+
+        .scenario-hint {
+            text-align: left;
+        }
+
+        .scenario-hint p {
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(240,236,228,0.3);
+            margin-bottom: 0.5rem;
+        }
+
+        .scenario-pills {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .pill {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid rgba(240,236,228,0.15);
+            border-radius: 20px;
+            font-size: 0.72rem;
+            color: rgba(240,236,228,0.4);
+            letter-spacing: 1px;
+        }
+
+        .pill.active {
+            border-color: rgba(201,168,76,0.4);
+            color: var(--gold);
+        }
+
+        .scroll-hint {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .scroll-hint p {
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(240,236,228,0.3);
+        }
+
+        .scroll-line {
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--gold), transparent);
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+
+        /* ══ LOGO COIN ══ */
+        .logo-corner {
+            position: fixed;
+            top: 2rem;
+            left: 3rem;
+            z-index: 3;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 0.2s;
+        }
+
+        .logo-corner span {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            color: rgba(240,236,228,0.5);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .logo-corner strong {
+            color: var(--gold);
+        }
+
+        /* ══ LANG / MENU COIN ══ */
+        .top-right {
+            position: fixed;
+            top: 2rem;
+            right: 3rem;
+            z-index: 3;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 0.2s;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .top-right a {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(240,236,228,0.35);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .top-right a:hover {
+            color: var(--gold);
+        }
+
+        /* ══ PARTICULES / SCINTILLEMENT ══ */
+        .particles {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ══ ANIMATIONS ══ */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.3; transform: scaleY(1); }
+            50%       { opacity: 1;   transform: scaleY(1.1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FOND ANIMÉ -->
+    <canvas id="bg-canvas"></canvas>
+    <div class="overlay"></div>
+
+    <!-- LOGO -->
+    <div class="logo-corner">
+        <span>Projet <strong>Climat</strong></span>
+    </div>
+
+    <!-- TOP RIGHT -->
+    <div class="top-right">
+        <a href="#">FR</a>
+        <a href="#">DE</a>
+        <a href="#">EN</a>
+    </div>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="scene">
+
+        <p class="epigraph">Une expérience narrative · Suisse · 2025–2075</p>
+
+        <h1>
+            <span class="year">2050</span>
+            <span class="subtitle-line">Quelle vie vous attend&nbsp;?</span>
+        </h1>
+
+        <p class="description">
+            Choisissez un <strong>lieu</strong>, une <strong>génération</strong> et un
+            <strong>scénario climatique</strong>.<br>
+            Laissez-vous porter dans une vie fictive en Suisse —<br>
+            entre adaptation, résilience et mutations du quotidien.
+        </p>
+
+        <div class="cta-wrapper">
+            <a href="narration-app.html" class="cta">
+                <span>Commencer l'expérience</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M5 12h14M13 6l6 6-6 6"/>
+                </svg>
+            </a>
+        </div>
+
+    </main>
+
+    <!-- BAS DE PAGE -->
+    <div class="bottom-bar">
+        <div class="scenario-hint">
+            <p>Scénarios disponibles</p>
+            <div class="scenario-pills">
+                <div class="pill active">+1.5 °C</div>
+                <div class="pill">+3 °C</div>
+                <div class="pill">+4.5 °C</div>
+            </div>
+        </div>
+        <div class="scroll-hint">
+            <div class="scroll-line"></div>
+            <p>Entrer</p>
+        </div>
+    </div>
+
+    <!-- JS : FOND ANIMÉ PARTICULES + PAYSAGE -->
+    <script>
+    (function () {
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let W, H, stars = [], mountains = [];
+
+        function resize() {
+            W = canvas.width  = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+            buildMountains();
+        }
+
+        /* ── Étoiles / particules ── */
+        function buildStars(n = 220) {
+            stars = Array.from({ length: n }, () => ({
+                x: Math.random() * W,
+                y: Math.random() * H * 0.7,
+                r: Math.random() * 1.2 + 0.2,
+                alpha: Math.random() * 0.6 + 0.1,
+                speed: Math.random() * 0.003 + 0.001,
+                phase: Math.random() * Math.PI * 2
+            }));
+        }
+
+        /* ── Silhouette montagnes suisses ── */
+        function buildMountains() {
+            mountains = [];
+            // Couche 1 — lointaine
+            mountains.push(generateRidge(12, H * 0.45, H * 0.25, 0.012, 'rgba(30,40,55,0.9)'));
+            // Couche 2 — intermédiaire
+            mountains.push(generateRidge(9,  H * 0.55, H * 0.20, 0.018, 'rgba(20,28,40,0.95)'));
+            // Couche 3 — premier plan
+            mountains.push(generateRidge(6,  H * 0.70, H * 0.30, 0.028, 'rgba(13,13,13,1)'));
+        }
+
+        function generateRidge(peaks, baseY, amplitude, roughness, color) {
+            const pts = [];
+            const step = W / (peaks * 4);
+            for (let x = -step; x <= W + step; x += step) {
+                pts.push({ x, y: baseY - Math.random() * amplitude });
+            }
+            // Ajout d'un pic central marqué (Cervin stylisé)
+            const midIdx = Math.floor(pts.length / 2);
+            pts[midIdx].y = baseY - amplitude * 1.6;
+            pts[midIdx - 1].y = baseY - amplitude * 0.9;
+            pts[midIdx + 1].y = baseY - amplitude * 0.85;
+            return { pts, baseY, color };
+        }
+
+        function drawMountain(ridge) {
+            ctx.beginPath();
+            ctx.moveTo(0, H);
+            const pts = ridge.pts;
+            ctx.lineTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length - 2; i++) {
+                const cx = (pts[i].x + pts[i+1].x) / 2;
+                const cy = (pts[i].y + pts[i+1].y) / 2;
+                ctx.quadraticCurveTo(pts[i].x, pts[i].y, cx, cy);
+            }
+            ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+            ctx.lineTo(W, H);
+            ctx.closePath();
+            ctx.fillStyle = ridge.color;
+            ctx.fill();
+        }
+
+        /* ── Lueur aurora discrète ── */
+        function drawAurora(t) {
+            const grd = ctx.createRadialGradient(
+                W * 0.5 + Math.sin(t * 0.0003) * W * 0.15,
+                H * 0.2,
+                0,
+                W * 0.5,
+                H * 0.2,
+                W * 0.6
+            );
+            grd.addColorStop(0, `rgba(40, 80, 120, ${0.12 + Math.sin(t * 0.0005) * 0.04})`);
+            grd.addColorStop(0.5, `rgba(20, 50, 80, 0.06)`);
+            grd.addColorStop(1, 'transparent');
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        /* ── Lune ── */
+        function drawMoon() {
+            const mx = W * 0.72, my = H * 0.18, mr = 28;
+            // Halo
+            const halo = ctx.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3);
+            halo.addColorStop(0, 'rgba(201,168,76,0.18)');
+            halo.addColorStop(1, 'transparent');
+            ctx.fillStyle = halo;
+            ctx.beginPath();
+            ctx.arc(mx, my, mr * 3, 0, Math.PI * 2);
+            ctx.fill();
+            // Disque
+            const moonGrd = ctx.createRadialGradient(mx - 6, my - 6, 2, mx, my, mr);
+            moonGrd.addColorStop(0, 'rgba(240,230,200,0.92)');
+            moonGrd.addColorStop(1, 'rgba(200,175,110,0.75)');
+            ctx.fillStyle = moonGrd;
+            ctx.beginPath();
+            ctx.arc(mx, my, mr, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        /* ── Boucle principale ── */
+        function draw(t) {
+            ctx.clearRect(0, 0, W, H);
+
+            // Ciel gradient nuit
+            const sky = ctx.createLinearGradient(0, 0, 0, H);
+            sky.addColorStop(0, '#01050f');
+            sky.addColorStop(0.4, '#071525');
+            sky.addColorStop(1, '#0d0d0d');
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, W, H);
+
+            drawAurora(t);
+            drawMoon();
+
+            // Étoiles
+            for (const s of stars) {
+                s.alpha = 0.2 + Math.sin(t * s.speed + s.phase) * 0.3 + 0.3;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(220, 215, 200, ${Math.max(0, s.alpha)})`;
+                ctx.fill();
+            }
+
+            // Montagnes
+            for (const m of mountains) drawMountain(m);
+
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', () => { resize(); buildStars(); });
+        resize();
+        buildStars();
+        requestAnimationFrame(draw);
+    })();
+    </script>
+
+</body>
+</html>
